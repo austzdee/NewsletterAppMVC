@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NewsletterAppMVC.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -10,6 +11,7 @@ namespace NewsletterAppMVC.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly string connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=Newsletter;Integrated Security=True;";
         public ActionResult Index()
         {
             return View();
@@ -25,8 +27,8 @@ namespace NewsletterAppMVC.Controllers
             }
             else
             {
-                string connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=Newsletter;Integrated Security=True;";
-                string queryString = @"INSERT INTO SignUps (FirstName, LastName, EmailAddress) VALUES
+               
+                string queryString = @"INSERT INTO dbo.SignUps (FirstName, LastName, EmailAddress) VALUES
                                     (@FirstName, @LastName, @EmailAddress)";
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
@@ -47,18 +49,37 @@ namespace NewsletterAppMVC.Controllers
             }
         }
 
-        public ActionResult About()
+        public ActionResult Admin()
         {
-            ViewBag.Message = "Your application description page.";
+            string queryString = @"SELECT Id, FirstName, LastName, EmailAddress FROM dbo.SignUps";
+            List<NewsletterSignUp> signups = new List<NewsletterSignUp>();
 
-            return View();
-        }
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlCommand command = new SqlCommand(queryString, connection);
 
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
+                try
+                {
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
 
-            return View();
+                    while (reader.Read())
+                    {
+                        var signup = new NewsletterSignUp();
+                        signup.Id = (int)reader["Id"];
+                        signup.FirstName = reader["FirstName"].ToString();
+                        signup.LastName = reader["LastName"].ToString();
+                        signup.EmailAddress = reader["EmailAddress"].ToString();
+                        signups.Add(signup);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return Content("SQL ERROR: " + ex.Message);
+                }
+            }
+
+            return View(signups);
         }
     }
 }
