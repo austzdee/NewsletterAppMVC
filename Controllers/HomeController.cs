@@ -1,4 +1,5 @@
 ﻿using NewsletterAppMVC.Models;
+using NewsletterAppMVC.Models.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -6,6 +7,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+
 
 namespace NewsletterAppMVC.Controllers
 {
@@ -51,8 +53,10 @@ namespace NewsletterAppMVC.Controllers
 
         public ActionResult Admin()
         {
-            string queryString = @"SELECT Id, FirstName, LastName, EmailAddress FROM dbo.SignUps";
+            string queryString = @"SELECT Id, FirstName, LastName, EmailAddress, SocialSecurityNumber FROM dbo.SignUps";
+
             List<NewsletterSignUp> signups = new List<NewsletterSignUp>();
+            List<SignUpVm> signupVms = new List<SignUpVm>();   // <-- moved outside
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -65,12 +69,24 @@ namespace NewsletterAppMVC.Controllers
 
                     while (reader.Read())
                     {
-                        var signup = new NewsletterSignUp();
-                        signup.Id = (int)reader["Id"];
-                        signup.FirstName = reader["FirstName"].ToString();
-                        signup.LastName = reader["LastName"].ToString();
-                        signup.EmailAddress = reader["EmailAddress"].ToString();
+                        var signup = new NewsletterSignUp
+                        {
+                            Id = (int)reader["Id"],
+                            FirstName = reader["FirstName"].ToString(),
+                            LastName = reader["LastName"].ToString(),
+                            EmailAddress = reader["EmailAddress"].ToString(),
+                            SocialSecurityNumber = reader["SocialSecurityNumber"].ToString()
+                        };
+
                         signups.Add(signup);
+
+                        signupVms.Add(new SignUpVm
+                        {
+                            FirstName = signup.FirstName,
+                            LastName = signup.LastName,
+                            EmailAddress = signup.EmailAddress
+                            // Add SocialSecurityNumber here if needed
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -79,7 +95,7 @@ namespace NewsletterAppMVC.Controllers
                 }
             }
 
-            return View(signups);
+            return View(signupVms);
         }
     }
 }
